@@ -19,3 +19,9 @@ addSbtPlugin("com.typesafe.sbt" % "sbt-mocha" % "1.1.0")
 addSbtPlugin("com.gilt.sbt" % "sbt-newrelic" % "0.1.2")
 
 //enablePlugins(NewRelic)
+
+// Use the Play sbt plugin for Play projects
+addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.4.3")
+
+addSbtPlugin("com.github.mpeltonen" % "sbt-idea" % "1.6.0")
+

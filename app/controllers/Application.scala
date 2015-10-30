@@ -17,10 +17,10 @@ class Application @Inject() (catDao: CatDAO, dogDao: DogDAO) extends Controller 
   def index = Action.async {
     catDao.all().zip(dogDao.all()).map {case (cats, dogs) => Ok(views.html.index(cats, dogs)) }
   }
-
   val catForm = Form(
     mapping(
-      "name" -> text(),
+
+  "name" -> text(),
       "color" -> text()
     )(Cat.apply)(Cat.unapply)
   )
