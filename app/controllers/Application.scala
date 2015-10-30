@@ -1,27 +1,21 @@
 package controllers
 
-import models._
-import play.api._
-import play.api.db.slick._
-import play.api.db.slick.Config.driver.simple._
-import play.api.data._
-import play.api.data.Forms._
-import play.api.mvc._
-import play.api.Play.current
-import play.api.mvc.BodyParsers._
-import play.api.libs.json.Json
-import play.api.libs.json.Json._
+import dao.CatDAO
+import dao.DogDAO
+import javax.inject.Inject
+import models.Cat
+import play.api.data.Form
+import play.api.data.Forms.mapping
+import play.api.data.Forms.text
+import play.api.libs.concurrent.Execution.Implicits.defaultContext
+import play.api.mvc.Action
+import play.api.mvc.Controller
+import models.Dog
 
-object Application extends Controller{
+class Application @Inject() (catDao: CatDAO, dogDao: DogDAO) extends Controller {
 
-  //create an instance of the table
-  val cats = TableQuery[CatsTable] //see a way to architect your app in the computers-database-slick sample  
-
-  //JSON read/write macro
-  implicit val catFormat = Json.format[Cat]
-
-  def index = DBAction { implicit rs =>
-    Ok(views.html.index(cats.list))
+  def index = Action.async {
+    catDao.all().zip(dogDao.all()).map {case (cats, dogs) => Ok(views.html.index(cats, dogs)) }
   }
 
   val catForm = Form(
@@ -31,22 +25,20 @@ object Application extends Controller{
     )(Cat.apply)(Cat.unapply)
   )
 
-  def insert = DBAction { implicit rs =>
-    val cat = catForm.bindFromRequest.get
-    cats.insert(cat)
+  val dogForm = Form(
+    mapping(
+      "name" -> text(),
+      "color" -> text()
+    )(Dog.apply)(Dog.unapply)
+  )
 
-    Redirect(routes.Application.index)
+  def insertCat = Action.async { implicit request =>
+    val cat: Cat = catForm.bindFromRequest.get
+    catDao.insert(cat).map(_ => Redirect(routes.Application.index))
   }
 
-  def jsonFindAll = DBAction { implicit rs =>
-    Ok(toJson(cats.list))
+  def insertDog = Action.async { implicit request =>
+    val dog: Dog = dogForm.bindFromRequest.get
+    dogDao.insert(dog).map(_ => Redirect(routes.Application.index))
   }
-
-  def jsonInsert = DBAction(parse.json) { implicit rs =>
-    rs.request.body.validate[Cat].map { cat =>
-        cats.insert(cat)
-        Ok(toJson(cat))
-    }.getOrElse(BadRequest("invalid json"))    
-  }
-  
 }
